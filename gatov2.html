@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gato :3</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            text-align: center;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #ff6b6b;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #4ecdc4;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 10px;
+            justify-content: center;
+            margin: 20px auto;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            border: 3px solid #ff9ff3;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 48px;
+            cursor: pointer;
+            background-color: #f7f1e3;
+            transition: all 0.3s ease;
+        }
+        .cell:hover {
+            background-color: #ffda79;
+            transform: scale(1.05);
+        }
+        .cell.x {
+            color: #1dd1a1;
+        }
+        .cell.o {
+            color: #ff6b6b;
+        }
+        #message {
+            font-size: 1.5em;
+            margin: 20px 0;
+            min-height: 40px;
+            color: #576574;
+        }
+        #restart {
+            background-color: #54a0ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #restart:hover {
+            background-color: #2e86de;
+        }
+        .cat-emoji {
+            font-size: 1.5em;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gato <span class="cat-emoji">:3</span></h1>
+    <div class="subtitle">¡Juega contra la computadora!</div>
+    
+    <div class="board" id="board"></div>
+    <div id="message"></div>
+    <button id="restart">Reiniciar Juego</button>
+
+    <script>
+        const board = document.getElementById('board');
+        const message = document.getElementById('message');
+        const restartBtn = document.getElementById('restart');
+        
+        let currentPlayer = 'X';
+        let gameBoard = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+
+        // Crear el tablero
+        function createBoard() {
+            board.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.setAttribute('data-index', i);
+                cell.addEventListener('click', handleCellClick);
+                board.appendChild(cell);
+            }
+        }
+
+        // Manejar clic en celda
+        function handleCellClick(e) {
+            const index = e.target.getAttribute('data-index');
+            
+            if (gameBoard[index] !== '' || !gameActive) return;
+            
+            gameBoard[index] = currentPlayer;
+            e.target.textContent = currentPlayer;
+            e.target.classList.add(currentPlayer === 'X' ? 'x' : 'o');
+            
+            if (checkWinner()) {
+                message.innerHTML = `¡<span style="color:${currentPlayer === 'X' ? '#1dd1a1' : '#ff6b6b'}">${currentPlayer === 'X' ? 'Jugador' : 'Computadora'}</span> gana! <span class="cat-emoji">:3</span>`;
+                gameActive = false;
+                return;
+            }
+            
+            if (gameBoard.every(cell => cell !== '')) {
+                message.innerHTML = '¡Empate! <span class="cat-emoji">:3</span>';
+                gameActive = false;
+                return;
+            }
+            
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            
+            if (currentPlayer === 'O') {
+                setTimeout(computerMove, 500);
+            }
+        }
+
+        // Movimiento de la computadora (IA simple)
+        function computerMove() {
+            let move;
+            
+            // 1. Buscar movimiento ganador
+            for (let i = 0; i < 9; i++) {
+                if (gameBoard[i] === '') {
+                    gameBoard[i] = 'O';
+                    if (checkWinner()) {
+                        move = i;
+                        gameBoard[i] = '';
+                        break;
+                    }
+                    gameBoard[i] = '';
+                }
+            }
+            
+            // 2. Bloquear al jugador
+            if (move === undefined) {
+                for (let i = 0; i < 9; i++) {
+                    if (gameBoard[i] === '') {
+                        gameBoard[i] = 'X';
+                        if (checkWinner()) {
+                            move = i;
+                            gameBoard[i] = '';
+                            break;
+                        }
+                        gameBoard[i] = '';
+                    }
+                }
+            }
+            
+            // 3. Movimiento aleatorio
+            if (move === undefined) {
+                const emptyCells = gameBoard.map((cell, index) => cell === '' ? index : null).filter(val => val !== null);
+                if (emptyCells.length > 0) {
+                    move = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                }
+            }
+            
+            if (move !== undefined) {
+                gameBoard[move] = 'O';
+                const cellElement = document.querySelector(`.cell[data-index="${move}"]`);
+                cellElement.textContent = 'O';
+                cellElement.classList.add('o');
+                
+                if (checkWinner()) {
+                    message.innerHTML = '¡<span style="color:#ff6b6b">Computadora</span> gana! <span class="cat-emoji">:3</span>';
+                    gameActive = false;
+                    return;
+                }
+                
+                if (gameBoard.every(cell => cell !== '')) {
+                    message.innerHTML = '¡Empate! <span class="cat-emoji">:3</span>';
+                    gameActive = false;
+                    return;
+                }
+                
+                currentPlayer = 'X';
+            }
+        }
+
+        // Verificar ganador
+        function checkWinner() {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // filas
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // columnas
+                [0, 4, 8], [2, 4, 6]             // diagonales
+            ];
+            
+            return winPatterns.some(pattern => {
+                const [a, b, c] = pattern;
+                return gameBoard[a] !== '' && 
+                       gameBoard[a] === gameBoard[b] && 
+                       gameBoard[a] === gameBoard[c];
+            });
+        }
+
+        // Reiniciar juego
+        function restartGame() {
+            gameBoard = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+            message.innerHTML = '';
+            createBoard();
+        }
+
+        // Inicializar juego
+        restartBtn.addEventListener('click', restartGame);
+        createBoard();
+    </script>
+</body>
+</html>
